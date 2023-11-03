@@ -99,78 +99,120 @@ module.exports = {
   },
   updateImage: async (req, res, next) => {
     try {
-    const { id } = req.params;
-    const { title, deskripsi } = req.body;
+      const { id } = req.params;
+      const { title, deskripsi } = req.body;
 
-    const getImageById = await prisma.image.findUnique({
+      const getImageById = await prisma.image.findUnique({
         where: {
-            id: parseInt(id),
+          id: parseInt(id),
         },
-    });
+      });
 
-    if (!getImageById) {
+      if (!getImageById) {
         return res.status(404).json({
-            status: false,
-            message: "Bad Request",
-            err: "Id not found",
-            data: null,
+          status: false,
+          message: "Bad Request",
+          err: "Id not found",
+          data: null,
         });
-    }
+      }
 
-    // If title or deskripsi is not provided, use the existing data
-    const newTitle = title || getImageById.title;
-    const newDeskripsi = deskripsi || getImageById.deskripsi;
+      // If title or deskripsi is not provided, use the existing data
+      const newTitle = title || getImageById.title;
+      const newDeskripsi = deskripsi || getImageById.deskripsi;
 
-    // Handle profile image securely
-    const file = req.file;
-    if (!file) {
+      // Handle profile image securely
+      const file = req.file;
+      if (!file) {
         const updateImage = await prisma.image.update({
-            where: {
-                id: parseInt(id),
-            },
-            data: {
-                title: newTitle,
-                deskripsi: newDeskripsi,
-            },
+          where: {
+            id: parseInt(id),
+          },
+          data: {
+            title: newTitle,
+            deskripsi: newDeskripsi,
+          },
         });
 
         return res.status(200).json({
-            status: true,
-            message: "Success",
-            err: null,
-            data: updateImage,
+          status: true,
+          message: "Success",
+          err: null,
+          data: updateImage,
         });
-    }
+      }
 
-    const { url, fileId } = await imagekit.upload({
+      // Delete existing image from imagekit
+      const deleteImageKit = await imagekit.deleteFile(
+        getImageById.imagekit_id
+      );
+
+      const { url, fileId } = await imagekit.upload({
         fileName: Date.now() + path.extname(file.originalname),
         file: file.buffer,
-    });
+      });
 
-    const updateImage = await prisma.image.update({
+        // Update existing image
+      const updateImage = await prisma.image.update({
         where: {
-            id: parseInt(id),
+          id: parseInt(id),
         },
         data: {
-            title: newTitle,
-            deskripsi: newDeskripsi,
-            imagekit_id: fileId,
-            url: url,
+          title: newTitle,
+          deskripsi: newDeskripsi,
+          imagekit_id: fileId,
+          url: url,
         },
-    });
+      });
 
-    res.status(200).json({
+      res.status(200).json({
         status: true,
         message: "Success",
         err: null,
         data: updateImage,
-    });
+      });
     } catch (err) {
       next(err);
     }
   },
   deleteImage: async (req, res, next) => {
     try {
+      const { id } = req.params;
+
+      const getImageById = await prisma.image.findUnique({
+        where: {
+          id: parseInt(id),
+        },
+      });
+
+      // If image not found
+      if (!getImageById) {
+        return res.status(404).json({
+          status: false,
+          message: "Bad Request",
+          err: "Id not found",
+          data: null,
+        });
+      }
+
+      // Delete existing image from database
+      const deleteImage = await prisma.image.delete({
+        where: {
+          id: parseInt(id),
+        },
+      });
+
+      // Delete existing image from imagekit
+      const deleteImageKit = await imagekit.deleteFile(
+        getImageById.imagekit_id
+      );
+
+      res.status(200).json({
+        status: true,
+        message: "Delete Success",
+        err: null,
+        data: deleteImage,
+      });
     } catch (err) {
       next(err);
     }
