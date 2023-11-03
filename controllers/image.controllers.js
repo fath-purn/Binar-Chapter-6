@@ -53,6 +53,18 @@ module.exports = {
   },
   getImage: async (req, res, next) => {
     try {
+        const getImage = await prisma.image.findMany({
+            orderBy: {
+            id: "asc",
+            },
+        });
+    
+        res.status(200).json({
+            status: true,
+            message: "Success",
+            err: null,
+            data: getImage,
+        });
     } catch (err) {
       next(err);
     }
