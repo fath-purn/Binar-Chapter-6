@@ -99,6 +99,72 @@ module.exports = {
   },
   updateImage: async (req, res, next) => {
     try {
+    const { id } = req.params;
+    const { title, deskripsi } = req.body;
+
+    const getImageById = await prisma.image.findUnique({
+        where: {
+            id: parseInt(id),
+        },
+    });
+
+    if (!getImageById) {
+        return res.status(404).json({
+            status: false,
+            message: "Bad Request",
+            err: "Id not found",
+            data: null,
+        });
+    }
+
+    // If title or deskripsi is not provided, use the existing data
+    const newTitle = title || getImageById.title;
+    const newDeskripsi = deskripsi || getImageById.deskripsi;
+
+    // Handle profile image securely
+    const file = req.file;
+    if (!file) {
+        const updateImage = await prisma.image.update({
+            where: {
+                id: parseInt(id),
+            },
+            data: {
+                title: newTitle,
+                deskripsi: newDeskripsi,
+            },
+        });
+
+        return res.status(200).json({
+            status: true,
+            message: "Success",
+            err: null,
+            data: updateImage,
+        });
+    }
+
+    const { url, fileId } = await imagekit.upload({
+        fileName: Date.now() + path.extname(file.originalname),
+        file: file.buffer,
+    });
+
+    const updateImage = await prisma.image.update({
+        where: {
+            id: parseInt(id),
+        },
+        data: {
+            title: newTitle,
+            deskripsi: newDeskripsi,
+            imagekit_id: fileId,
+            url: url,
+        },
+    });
+
+    res.status(200).json({
+        status: true,
+        message: "Success",
+        err: null,
+        data: updateImage,
+    });
     } catch (err) {
       next(err);
     }
