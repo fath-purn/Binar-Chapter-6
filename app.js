@@ -8,6 +8,13 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
+app.use('/', (req, res) => {
+    res.json({
+        status: true,
+        message: 'Welcome to the image upload API'
+    });
+});
+
 const imageRoutes = require('./routes/image.routes');
 app.use('/api/v1', imageRoutes);
 
