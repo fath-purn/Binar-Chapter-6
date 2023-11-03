@@ -27,6 +27,6 @@ jobs:
       
    
       - name: Deploy to Railway
-        run: railway up --service ${{ secrets.RAILWAY_SERVICES_ID }}
+        run: railway up
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_DEVELOP_TOKEN }}
