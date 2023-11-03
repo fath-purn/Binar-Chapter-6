@@ -53,24 +53,46 @@ module.exports = {
   },
   getImage: async (req, res, next) => {
     try {
-        const getImage = await prisma.image.findMany({
-            orderBy: {
-            id: "asc",
-            },
-        });
-    
-        res.status(200).json({
-            status: true,
-            message: "Success",
-            err: null,
-            data: getImage,
-        });
+      const getImage = await prisma.image.findMany({
+        orderBy: {
+          id: "asc",
+        },
+      });
+
+      res.status(200).json({
+        status: true,
+        message: "Success",
+        err: null,
+        data: getImage,
+      });
     } catch (err) {
       next(err);
     }
   },
   getImageById: async (req, res, next) => {
     try {
+      const { id } = req.params;
+      const getImageById = await prisma.image.findUnique({
+        where: {
+          id: parseInt(id),
+        },
+      });
+
+      if (!getImageById) {
+        return res.status(404).json({
+          status: false,
+          message: "Bad Request",
+          err: "Id not found",
+          data: null,
+        });
+      }
+
+      res.status(200).json({
+        status: true,
+        message: "Success",
+        err: null,
+        data: getImageById,
+      });
     } catch (err) {
       next(err);
     }
